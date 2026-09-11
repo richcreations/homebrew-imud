@@ -1,0 +1,48 @@
+# imud — IMU daemon
+# Copyright (c) 2026 Richard Simpson
+# SPDX-License-Identifier: MIT
+class ImudSignalk < Formula
+  desc "Signal K bridge for the imud IMU daemon"
+  homepage "https://github.com/richcreations/imud"
+  url "https://github.com/richcreations/imud/releases/download/v1.10.1/imud-1.10.1.tar.gz"
+  sha256 "d402928b1501637063cc8a7014dfe8e4758dd8e4dd697fea06b7bf6236f912d0"
+  license "MIT"
+  head "https://github.com/richcreations/imud.git", branch: "main"
+
+  depends_on "richcreations/imud/imud"
+
+  def install
+    system "./configure", "--prefix=#{HOMEBREW_PREFIX}",
+                          "--etcdir=#{etc}/imud",
+                          "--rundir=#{var}/run",
+                          "--statedir=#{var}/imud",
+                          "--with-service=none"
+    # One bridge, not `make bridges`: each is its own package here, and
+    # building all five would drag every bridge's dependencies into each.
+    system "make", "imud-signalk"
+    system "make", "install-signalk", "DESTDIR=#{buildpath}/stage"
+
+    staged = buildpath/"stage#{HOMEBREW_PREFIX}"
+
+    # The bridge's own config, kept across upgrades once edited.
+    (etc/"imud").mkpath
+    Dir["#{staged}/etc/imud/*"].each do |src|
+      (etc/"imud").install src unless (etc/"imud"/File.basename(src)).exist?
+    end
+    rm_r staged/"etc" if (staged/"etc").exist?
+
+    prefix.install Dir["#{staged}/*"]
+  end
+
+  service do
+    run [opt_bin/"imud-signalk", "--config", etc/"imud/imud-signalk.conf"]
+    keep_alive true
+    log_path var/"log/imud-signalk.log"
+    error_log_path var/"log/imud-signalk.log"
+  end
+
+  test do
+    assert_match "imud-signalk", shell_output("#{bin}/imud-signalk --version")
+    assert_match "--config", shell_output("#{bin}/imud-signalk --help")
+  end
+end
