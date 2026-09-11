@@ -5,7 +5,7 @@ general-purpose IMU daemon for Linux and macOS.
 
 ```sh
 brew tap richcreations/imud
-brew install richcreations/imud/imud richcreations/imud/imud-wmm-data
+brew install --HEAD richcreations/imud/imud richcreations/imud/imud-wmm-data
 brew services start richcreations/imud/imud
 ```
 
@@ -30,3 +30,7 @@ The formulae are generated from `packaging/homebrew/` in the
 not here.
 
 Issues and pull requests: <https://github.com/richcreations/imud/issues>.
+
+`--HEAD` is needed until imud 1.11.0 ships: the formulae pass `--prefix`,
+`--rundir`, `--statedir` and `--with-service=none`, none of which the 1.10.1
+release tarball's `configure` takes.
